@@ -8,6 +8,7 @@ from check50_java.util import _expand_classpaths
 
 #: Default CFLAGS for :func:`check50.c.compile`
 CFLAGS = {}  # {"std": "c11", "ggdb": True, "lm": True}
+TIMEOUT = 10
 
 
 def compile(*files, javac=JAVAC, classpaths=None, failhelp=None, **cflags):
@@ -40,7 +41,7 @@ def compile(*files, javac=JAVAC, classpaths=None, failhelp=None, **cflags):
     process = check50._api.run(f"{javac} -classpath \"{classpath}\" {flags} {files}")
 
     # Strip out ANSI codes
-    stdout = re.sub(r"\x1B\[[0-?]*[ -/]*[@-~]", "", process.stdout())
+    stdout = process.stdout(timeout=TIMEOUT)
 
     if process.exitcode != 0:
         for line in stdout.splitlines():

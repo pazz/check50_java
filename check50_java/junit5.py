@@ -23,6 +23,7 @@ JUNIT_DEAFAULT_ARGS = [
     '--details=none',
 ]
 XML_REPORT = "TEST-junit-jupiter.xml"
+TIMEOUT = 10
 
 
 def compile_test(*files, javac=JAVAC, **cflags):
@@ -143,7 +144,7 @@ def run_test(java=JAVA, classpaths=None, args=None):
         # check50._api.log(cmdline)
 
         # call subprocess and wait until it's done
-        check50._api.run(cmdline).exit()
+        check50._api.run(cmdline).exit(timeout=TIMEOUT)
 
         # interpret XML report
         path = os.path.join(report_dir, XML_REPORT)
