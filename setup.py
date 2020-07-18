@@ -24,7 +24,6 @@ setuptools.setup(
     ],
     python_requires='>=3.6',
     install_requires=[
-        'pyjnius>=1.3.0',
         'check50',
     ],
     #zip_safe=False,
