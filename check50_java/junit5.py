@@ -146,6 +146,10 @@ def run_test(java=JAVA, classpaths=None, args=None):
         # call subprocess and wait until it's done
         check50._api.run(cmdline).exit(timeout=TIMEOUT)
 
+        # supress log message introduced in previous command
+        # which logs the full shell command (java -cp ..)
+        check50._api._log.clear()
+
         # interpret XML report
         path = os.path.join(report_dir, XML_REPORT)
         report = read_xml_report(path, include_trace=True)
@@ -162,7 +166,7 @@ def interpret_testcase(case):
         msg = case['message']
         if case['exception'].endswith('AssertionFailedError'):
             r = r'^expected: \<(.+?)\> but was: \<(.+?)\>'
-            m = re.match(r, msg)
+            m = re.match(r, msg, re.MULTILINE)
             if m:
                 expected, actual = m.groups()
                 raise Mismatch(expected, actual)

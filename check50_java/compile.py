@@ -68,7 +68,6 @@ def run(mainclass, java=JAVA, classpaths=None, failhelp=None, args=None):
         mainclass
     ] + args
     cmdline = " ".join(cmd)
-    log(cmdline)
 
-    # call subprocess and wait until it's done
+    # call subprocess
     return check50._api.run(cmdline)
