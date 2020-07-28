@@ -197,16 +197,24 @@ def read_xml_report(path, include_trace=False):
             etype = e.get('type')
 
             if etype == 'java.lang.NoSuchMethodError':
-                r = r'^\'(\w+?) (\w+?)\.([a-zA-Z<>]+?)\((.*)\)\''
+                # highlight if default constructor missing
+                r = r'^(\w+?): method \'void <init>\(\)\' not found'
                 m = re.match(r, c['message'])
                 if m:
-                    rtype, clazz, method, args = m.groups()
-                    if method == "<init>":
-                        msg = f"could not find constructor:  {clazz}({args})."
-                    else:
-                        msg = "could not find method:  " \
-                            + f"{rtype} {clazz}.{method}({args})"
-                    c['message'] = msg
+                    clazz = m.groups()[0]
+                    c['message'] = f"no constructor: '{clazz}()'."
+                else:
+                    # highlight other missing methods
+                    r = r'^\'(\w+?) (\w+?)\.([a-zA-Z<>]+?)\((.*)\)\''
+                    m = re.match(r, c['message'])
+                    if m:
+                        rtype, clazz, method, args = m.groups()
+                        if method == "<init>":
+                            msg = f"no constructor: '{clazz}({args})'."
+                        else:
+                            msg = "could not find method:  " \
+                                + f"{rtype} {clazz}.{method}({args})"
+                        c['message'] = msg
 
         for f in case.findall('failure'):
             c['pass'] = False
