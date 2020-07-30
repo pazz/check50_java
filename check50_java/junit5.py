@@ -1,15 +1,21 @@
+# Copyright (C) 2020  Patrick Totzke <patricktotzke@gmail.com>
+# This file is released under the GNU GPL, version 3 or a later revision.
+
 import xml.etree.ElementTree as ET  # for junit parser
 
 import os
 import re
 import tempfile
 import check50
+
 from check50._api import Failure
 from check50._api import Mismatch
 from check50_java import compile as compile_raw
 from check50_java import JAVAC, JAVA
 from check50_java.util import _expand_classpaths
 
+
+##########################
 JUNIT_JAR = "junit-platform-console-standalone-1.6.2.jar"
 
 JUNIT_JAR_PATH = os.path.join(
@@ -17,109 +23,59 @@ JUNIT_JAR_PATH = os.path.join(
     'lib',
     JUNIT_JAR)
 
-JUNIT_DEAFAULT_ARGS = [
+JUNIT_DEFAULT_ARGS = [
     '--disable-ansi-colors',
     '--disable-banner',
     '--details=none',
 ]
 XML_REPORT = "TEST-junit-jupiter.xml"
-TIMEOUT = 10
 
 
-def compile_test(*files, javac=JAVAC, **cflags):
+def compile_test(*files, javac=JAVAC, classpaths=None, **cflags):
+    """
+    Compile given source files but make sure that the junit jar
+    is added to the classpath when calling the compiler.
+
+    All parameters are as for :func:`check50_java.run`.
+    The junit5 standalone jar file will be added to the classpath.
+    """
+    cp = classpaths or []
+    cp.append(JUNIT_JAR_PATH)
     compile_raw(*files,
-                javac=JAVAC,
-                classpaths=[JUNIT_JAR_PATH],
+                javac=javac,
+                classpaths=cp,
                 failhelp="make sure your methods have correct signatures",
                 **cflags)
 
 
-def checks_from_testclass(testclass, dependency=None, classpaths=None):
-    """
-    Create check50 checks for every testcase that junit5 finds
-    the given test class.
-
-    This will create one check which runs the junit cli on the given testclass
-    and several child checks, one for every testcase reported by junit.
-    The parent check depends on the given dependency (a check50 check).
-    It is the only one that interacts with junit5. All other checks depend on
-    this parent check, and only relay the results of their (junit) testcase.
-
-    :param testclass: the name of the junit test class
-    :type testclass: str
-    :param dependency: the check that all generated checks depends on
-    :type dependency: function
-    :param classpaths: a list of paths that together will form the classpath
-                       parameter for the underlying `java` command.
-                       Each element is a string containing a path to a
-                       directory or jar file. relative paths are interpreted
-                       relative to the problem set.
-    :type timeout: list(str)
-
-
-    Example usage::
-
-        @check50.check() # Mark 'exists' as a check
-        def exists():
-            \"""hello.c exists\"""
-            check50.exists("hello.c")
-
-
-    """
-    checks = []  # we will collect checks here
-
-    # The main check, which runs all unit tests and passes on a report
-    @check50.check(dependency)
-    def run_tests():
-        f"""Inspect {testclass}"""
-        report = run_test(classpaths=classpaths,
-                          args=['--select-class', '"' + testclass+'"'])
-
-        return report
-
-    checks.append(run_tests)
-
-    # A function to create a sub-check for the i^th testcase in the report.
-    # It will simply look up and pass on the results from the report.
-    # testclass and testmethod are only used to derive a readable name.
-    # TODO: read those off the report.
-    def _create_check(testclass, testmethod, i):
-        def check(rep):
-            case = rep['testcases'][i]
-            inspect_testcase(case)
-
-        check_id = f"{i}:{testclass}.{testmethod}"
-        check.__name__ = check_id
-        check.__doc__ = check_id
-        return check
-
-    # run junit once to generate report and extract test cases
-    report = run_test(classpaths=classpaths,
-                      args=['--select-class', testclass])
-
-    i = 0
-    for case in report['testcases']:
-        testmethod = case['name']
-
-        check = _create_check(testclass, testmethod, i)
-        i += 1
-
-        # Register the check with check50
-        check = check50.check(run_tests)(check)
-
-        checks.append(check)
-    return checks
-
-
 def run_and_interpret_test(java=JAVA, classpaths=None, args=None):
-    """execute the junit5 CLI runner and interprets all resulting testcases."""
+    """
+    Execute the Junit5 CLI runner and interprets all resulting testcases.
+
+    This will run the CLI test runner with the given arguments (to select the
+    testclass or filter the list of tests to execute), then read the resulting
+    XML report and raise check50.Failure's for every failure or error
+    found in the report.
+
+    All parameters are as for :func:`check50_java.run`.
+    The junit5 standalone jar file will be added to the classpath.
+
+    """
     report = run_test(java, classpaths, args)
     for case in report['testcases']:
         interpret_testcase(case)
 
 
-def run_test(java=JAVA, classpaths=None, args=None):
-    """execute the junit5 CLI and return a report."""
+def run_test(java=JAVA, classpaths=None, timeout=0, args=None):
+    """
+    Execute the Junit5 CLI and return a report.
+
+    All parameters are as for :func:`check50_java.run`.
+    The junit5 standalone jar file will be added to the classpath.
+
+    The return value is a python dict that summarizes relevant testcases
+    and their execution info, as read from the Junit XML report file.
+    """
 
     # prepare classpath parameter
     classpaths = ['.'] + _expand_classpaths(classpaths)
@@ -127,7 +83,7 @@ def run_test(java=JAVA, classpaths=None, args=None):
 
     # command line arguments to the junit5 runner cmd
     args = args or []
-    args = JUNIT_DEAFAULT_ARGS + args
+    args = JUNIT_DEFAULT_ARGS + args
 
     # make sure report is defined
     report = {'testcases': []}
@@ -144,7 +100,7 @@ def run_test(java=JAVA, classpaths=None, args=None):
         # check50._api.log(cmdline)
 
         # call subprocess and wait until it's done
-        check50._api.run(cmdline).exit(timeout=TIMEOUT)
+        check50._api.run(cmdline).exit(timeout=timeout)
 
         # supress log message introduced in previous command
         # which logs the full shell command (java -cp ..)
@@ -159,8 +115,8 @@ def run_test(java=JAVA, classpaths=None, args=None):
 
 def interpret_testcase(case):
     """
-    raises appropriate check50 exceptions
-    if given testcase (from a junit report) fails.
+    Inspect the given testcase result and raise an appropriate check50.Failure
+    if the testcase was unsuccessful.
     """
     if not case['pass']:
         msg = case['message']
