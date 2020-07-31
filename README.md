@@ -91,6 +91,15 @@ A full example follows.
     ```
   This will run the precompiled unit test on the student submission, parse junit's XML report and raise any `check50.Failure`s as appropriate for the result. In this case it would raise a `check50.Mismatch` exception if the `assertEquals` within the unit test is thrown.
 
+4. Make sure to add `check50-java` as a dependency in your pset's `.cs50.yml`:
+    ```yml
+    check50:
+      dependencies:
+        - check50-java
+      files:
+        - !exclude "*"
+        - !include "*.java"
+    ```
 
 
 [check50]: https://github.com/cs50/check50
