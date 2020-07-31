@@ -48,7 +48,7 @@ def compile_test(*files, javac=JAVAC, classpaths=None, **cflags):
                 **cflags)
 
 
-def run_and_interpret_test(java=JAVA, classpaths=None, args=None):
+def run_and_interpret_test(**kwargs):
     """
     Execute the Junit5 CLI runner and interprets all resulting testcases.
 
@@ -61,12 +61,12 @@ def run_and_interpret_test(java=JAVA, classpaths=None, args=None):
     The junit5 standalone jar file will be added to the classpath.
 
     """
-    report = run_test(java, classpaths, args)
+    report = run_test(**kwargs)
     for case in report['testcases']:
         interpret_testcase(case)
 
 
-def run_test(java=JAVA, classpaths=None, timeout=0, args=None):
+def run_test(java=JAVA, classpaths=None, timeout=None, args=None):
     """
     Execute the Junit5 CLI and return a report.
 
