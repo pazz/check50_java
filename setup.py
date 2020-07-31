@@ -7,7 +7,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="check50_java",
-    version="0.0.1",
+    version="0.1",
     author="Patrick Totzke",
     author_email="patricktotzke@gmail.com",
     description="A check50 extension for java",
