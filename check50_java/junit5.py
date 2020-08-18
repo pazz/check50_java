@@ -104,7 +104,7 @@ def run_test(java=JAVA, classpaths=None, timeout=None, args=None):
 
         # supress log message introduced in previous command
         # which logs the full shell command (java -cp ..)
-        check50._api._log.clear()
+        #check50._api._log.clear()
 
         # interpret XML report
         path = os.path.join(report_dir, XML_REPORT)
@@ -128,6 +128,11 @@ def interpret_testcase(case):
                 raise Mismatch(expected, actual)
             else:
                 raise Failure(msg)
+        elif case['exception'].endswith('InstantiationError'):
+            msg = f"could not instantiate \"{msg}\""
+            hlp = "is this an Interface?"
+            raise Failure(msg, help=hlp)
+
         raise Failure(msg)
 
 
