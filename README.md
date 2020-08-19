@@ -80,7 +80,7 @@ A full example follows.
     }
     ```
 
-2.  Move `BasketTest.class` somewhere into your pset directory, say under `tests/`.
+2.  Move the bytecode `DrinkTest.class` somewhere into your pset directory, say under `tests/`.
 3.  Add a check as follows (I would usually have this depend on class exists, compiles, and can be instantiated checks).
     ```python
     @check50.check()
