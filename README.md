@@ -3,7 +3,8 @@
 This is an extension, a collection of utility scripts, for the [CS50 automarker check50][check50].
 
 It provides convenient wrappers around [`check50.run`][run], for compiling and interpreting Java source/byte code.
-It also comes with functions to execute and interpret the results of [Junit5][junit] unit tests.
+It also comes with functions to execute and interpret the results of [Junit5][junit] unit tests
+and [checkstyle][checkstyle] warnings.
 
 
 ## Example Usage
@@ -101,8 +102,54 @@ A full example follows.
         - !include "*.java"
     ```
 
+### Raising checkstyle warnings
 
+Checkstyle let's you complain about style issues in java code beyond what [style50][style50] (astyle) can do.
+For instance you can flag if identifiers don't adhere to Java's camelCase code conventions, or javadocs are missing.
+
+Since the checkstyle stand-alone CLI application is too large (~12M), we ship only wrapper code that can call, and interpret its XML reports.
+
+To use this, you need to add two things to your pset
+1. a stand-alone jar file, e.g. `checkstyle-8.35-all.jar` available [here](https://github.com/checkstyle/checkstyle/releases/)
+2. an xml file with checks to include (You can pick the sub or google style files in the jar and delete what you don't like).
+
+Let's assume you have these two files under `checkstyle/` in your pset.
+Then you add a check50 check as follows. The target can be more specific of course.
+
+```python
+@check50.check(exists)
+def checkstyle():
+    """style police"""
+    check50.include("checkstyle/")
+    check50_java.checkstyle.run_and_interpret_checkstyle(
+        jar='checkstyle/checkstyle-8.35-all.jar',
+        checks_file='checkstyle/checks.xml',
+        target='*.java')
+```
+
+This will dump all warnings into the log (because check50 hard-codes its html template).
+Example output:
+
+```
+:( style police
+    stylistic issues found
+    running java -jar checkstyle/checkstyle-8.35-all.jar -c checkstyle/checks.xml -f xml *.java...
+    Issues found:
+    - In Basket.java(line 2, char 1): Wrong lexicographical order for 'java.util.ArrayList' import. Should be before 'java.util.List'.
+    - In Basket.java(line 19, char 5): Missing a Javadoc comment.
+    - In Basket.java(line 27, char 5): Missing a Javadoc comment.
+    - In Basket.java(line 35, char 5): Missing a Javadoc comment.
+    - In Basket.java(line 47): First sentence of Javadoc is missing an ending period.
+    - In Item.java(line 27): Line is longer than 100 characters (found 102).
+    - In Item.java(line 53, char 40): 'typecast' is not followed by whitespace.
+    - In Snack.java(line 20, char 5): Missing a Javadoc comment.
+```
+
+
+
+[checkstyle]: https://checkstyle.sourceforge.io/
 [check50]: https://github.com/cs50/check50
 [run]: https://cs50.readthedocs.io/projects/check50/en/latest/api/#check50.run
 [junit]: https://junit.org/junit5
 [jcl]: https://junit.org/junit5/docs/current/user-guide/#running-tests-console-launcher
+[style50]: https://cs50.readthedocs.io/style50/
