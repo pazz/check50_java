@@ -24,5 +24,4 @@ setuptools.setup(
     install_requires=[
         'check50',
     ],
-    package_data={'check50_java': ['lib/*.jar']},
 )
