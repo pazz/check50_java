@@ -3,7 +3,7 @@
 
 import check50
 
-
+#TODO: This is buggy and reports false positives!
 def is_application_class(classname):
     """
     Try to run the main method in the given class and raise an
