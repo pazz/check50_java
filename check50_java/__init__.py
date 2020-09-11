@@ -5,4 +5,4 @@ JAVAC = "javac"
 JAVA = "java"
 
 from . compile import compile, run
-import checks
+from . import checks
